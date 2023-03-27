@@ -11,7 +11,7 @@ public class Block {
 	private int maxDepth; 
 	private Color color;
 	private Block[] children; // {UR, UL, LL, LR}
-	public static Random gen = new Random(2);
+	public static Random gen = new Random(4);
  
 	/*
 	 * These two constructors are here for testing purposes. 
@@ -63,7 +63,7 @@ public class Block {
 	  *  coordinates of the top left corner of the block. 
 	 */
 	public void updateSizeAndPosition (int size, int xCoord, int yCoord) {
-		if (this.level == 0 ) {
+		if (this.level == 0 ) { //this only works if it is the top block
 			int level = 0;
 			int tempSize = size;
 			while (level <= this.maxDepth) {
@@ -75,6 +75,7 @@ public class Block {
 				}
 			}
 		}
+
 		this.size = size;
 		this.xCoord = xCoord;
 		this.yCoord = yCoord;
@@ -132,8 +133,6 @@ public class Block {
 		return new BlockToDraw(GameColors.HIGHLIGHT_COLOR, this.xCoord, this.yCoord, this.size, 5);
 	}
  
- 
- 
 	/*
 	 * Return the Block within this Block that includes the given location
 	 * and is at the given level. If the level specified is lower than 
@@ -151,37 +150,138 @@ public class Block {
 	 * - if (x,y) is not within this Block, return null.
 	 */
 	public Block getSelectedBlock(int x, int y, int lvl) {
-		/*
-		 * ADD YOUR CODE HERE
-		 */
-		return null;
+		if((this.level > lvl) || (lvl > this.maxDepth)){
+			throw new IllegalArgumentException("Invalid depth level provided");
+		}
+
+		if (!containsCoord(this, x, y)){
+			return null;
+		} else {
+			return searchTree(this, x, y, lvl);
+		}
+	}
+
+	//Helper function to check if a block contains given coordinates x,y
+	private static boolean containsCoord(Block block, int x, int y){
+		return ((block.xCoord <= x && x <= block.xCoord + block.size) && (block.yCoord <= y && y <= block.yCoord + block.size ));
+	}
+
+	//Recursive Tree Search Algo
+	private static Block searchTree(Block block, int x, int y, int lvl){
+		if(block == null){ //return null if block doesnt exist
+			return null;
+		}
+
+		if(containsCoord(block, x, y)){ //return null if block doesnt contain given coords
+			if(lvl == block.level){
+				return block; //if the block is at the correct level and contains the coords, immediately return this block
+			} else if (block.children.length == 0 ){
+				return null; //if the block is not at the right level and has no children, it is a leaf and can immediately be pruned
+			} else {
+				Block result = null;
+				while (result == null) { //we are GUARANTEED a result past the input parsing, continuously search until a result is found
+					for (Block subBlock : block.children) {
+						Block tempResult = searchTree(subBlock, x, y, lvl); //recursively call for each child of a given block
+						if (tempResult != null) {
+							result = tempResult; //if a block is found write to the result
+						}
+					}
+					if (result == null) { //if no result is found at a given level, go up one level to find the closest one
+						lvl--;
+					}
+				}
+				return result;
+			}
+		} else {
+			return null;
+		}
 	}
 
 	/*
 	 * Swaps the child Blocks of this Block. 
 	 * If input is 1, swap vertically. If 0, swap horizontally. 
 	 * If this Block has no children, do nothing. The swap 
-	 * should be propagate, effectively implementing a reflection
+	 * should be propagated, effectively implementing a reflection
 	 * over the x-axis or over the y-axis.
 	 * 
 	 */
 	public void reflect(int direction) {
-		/*
-		 * ADD YOUR CODE HERE
-		 */
-	}
- 
+		if (!(direction == 0 || direction == 1)) {
+			throw new IllegalArgumentException("Invalid direction provided");
+		}
 
- 
+		if(this.children.length == 0) {
+			return;
+		} else {
+			Block[] newSubBlocks = new Block[4];
+			for(int i = 0; i < 4; i++) { // UR UL LL LR
+				switch(i) {
+					case(0) -> {
+						if(direction == 0){ //LR LL UL UR
+							newSubBlocks[3] = this.children[i];
+						} else { // UL UR LR LL
+							newSubBlocks[1] = this.children[i];
+						}
+					}
+					case(1) -> {
+						if(direction == 0){ //LR LL UL UR
+							newSubBlocks[2] = this.children[i];
+						} else { // UL UR LR LL
+							newSubBlocks[0] = this.children[i];
+						}
+					}
+					case(2) -> {
+						if(direction == 0){ //LR LL UL UR
+							newSubBlocks[1] = this.children[i];
+						} else { // UL UR LR LL
+							newSubBlocks[3] = this.children[i];
+						}
+					}
+					case(3) -> {
+						if(direction == 0){ //LR LL UL UR
+							newSubBlocks[0] = this.children[i];
+						} else { // UL UR LR LL
+							newSubBlocks[2] = this.children[i];
+						}
+					}
+				}
+				this.children[i].reflect(direction);
+			}
+			this.children = newSubBlocks;
+			this.updateSizeAndPosition(this.size, this.xCoord, this.yCoord);
+		}
+	}
+
 	/*
 	 * Rotate this Block and all its descendants. 
 	 * If the input is 1, rotate clockwise. If 0, rotate 
 	 * counterclockwise. If this Block has no children, do nothing.
 	 */
 	public void rotate(int direction) {
-		/*
-		 * ADD YOUR CODE HERE
-		 */
+		if (!(direction == 0 || direction == 1)) {
+			throw new IllegalArgumentException("Invalid direction provided");
+		}
+
+		if (this.children.length == 0) {
+			return;
+		} else {
+			//this is array rotation
+			Block[] newSubBlocks = new Block[4];
+
+			if(direction == 0){ //CCW  0123 -> 3012
+				for(int i = 0; i < 4; i++) { //0,1 1,2 2,3 3,0
+					newSubBlocks[(i+1) % 4] = this.children[i];
+					this.children[i].rotate(direction);
+				}
+			} else { //CW 0123 -> 1230
+				for(int i = 0; i < 4; i++){ //0,3 1,0 2,1 3,2
+					newSubBlocks[(i+3) % 4] = this.children[i];
+					this.children[i].rotate(direction);
+				}
+			}
+			this.children = newSubBlocks;
+			this.updateSizeAndPosition(this.size, this.xCoord, this.yCoord);
+		}
 	}
  
 
@@ -201,10 +301,17 @@ public class Block {
 	 * 
 	 */
 	public boolean smash() {
-		/*
-		 * ADD YOUR CODE HERE
-		 */
-		return false;
+		if(this.level == 0 || this.level == this.maxDepth){
+			return false;
+		} else {
+			Block[] newSubBlocks = new Block[4];
+			for(int i = 0; i < 4; i++){
+				newSubBlocks[i] = new Block(this.level + 1, this.maxDepth);
+				newSubBlocks[i].updateSizeAndPosition(this.size, this.xCoord, this.yCoord);
+			}
+			this.children = newSubBlocks;
+			return true;
+		}
 	}
  
  
@@ -216,11 +323,26 @@ public class Block {
 	 * 
 	 * arr[0][0] is the color of the unit cell in the upper left corner of this Block.
 	 */
+
+	//Unit cell = smallest
 	public Color[][] flatten() {
-		/*
-		 * ADD YOUR CODE HERE
-		 */
-		return null;
+		Color[][] returnArray = new Color[this.size][this.size];
+		this.writeArray(returnArray);
+
+		return returnArray;
+	}
+	private void writeArray(Color[][] array){
+		if (this.children.length == 0){
+			for(int i = 0; i < this.size; i++){
+				for(int j = 0; j < this.size; j++){
+					array[this.yCoord + i][this.xCoord + j] = this.color;
+				}
+			}
+		} else {
+			for(Block subBlock : this.children){
+				subBlock.writeArray(array);
+			}
+		}
 	}
 
  
@@ -288,8 +410,8 @@ public class Block {
 		}
 	}
 	public static void main(String[] args) {
-		Block blockDepth2 = new Block(0,2);
-		blockDepth2.updateSizeAndPosition(16,0,0);
-		blockDepth2.getBlocksToDraw();
+		Block blockDepth3 = new Block(0,3);
+		blockDepth3.updateSizeAndPosition(16,0,0);
+		blockDepth3.printColoredBlock();
 	}
 }
