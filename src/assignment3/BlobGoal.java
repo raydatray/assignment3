@@ -10,9 +10,8 @@ public class BlobGoal extends Goal{
 
 	@Override
 	public int score(Block board) {
-		/*
-		 * ADD YOUR CODE HERE
-		 */
+		board.flatten();
+
 		return 0;
 	}
 
@@ -24,10 +23,7 @@ public class BlobGoal extends Goal{
 
 
 	public int undiscoveredBlobSize(int i, int j, Color[][] unitCells, boolean[][] visited) {
-		/*
-		 * ADD YOUR CODE HERE
-		 */
-		return 0;
+		return  0;
 
 	}
 

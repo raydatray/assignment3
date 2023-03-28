@@ -7,23 +7,23 @@ public class Block {
 	private int xCoord;
 	private int yCoord;
 	private int size; // height/width of the square
-	private int level; // the root (outer most block) is at level 0
+	private int level; // the root (outermost block) is at level 0
 	private int maxDepth; 
 	private Color color;
 	private Block[] children; // {UR, UL, LL, LR}
-	public static Random gen = new Random(4);
+	public static Random gen = new Random();
  
 	/*
 	 * These two constructors are here for testing purposes. 
 	 */
 	public Block() {}
 	public Block(int x, int y, int size, int lvl, int  maxD, Color c, Block[] subBlocks) {
-		this.xCoord=x;
-		this.yCoord=y;
-		this.size=size;
-		this.level=lvl;
+		this.xCoord = x;
+		this.yCoord = y;
+		this.size = size;
+		this.level = lvl;
 		this.maxDepth = maxD;	
-		this.color=c;
+		this.color = c;
 		this.children = subBlocks;
 	}
 
@@ -37,18 +37,18 @@ public class Block {
 		this.level = lvl;
 		this.maxDepth = maxDepth;
 
-		if(lvl == maxDepth) {
+		if(lvl == maxDepth) { //At max depth you cannot generate more children
 			this.color = GameColors.BLOCK_COLORS[gen.nextInt(4)];
 			this.children = new Block[0];
 		} else {
-			if (gen.nextFloat(1) < Math.exp((-.25)*this.level)) {
+			if (gen.nextFloat(1) < Math.exp(-.25 * this.level)) { //Attempt to generate more children
 				Block[] subBlocks = new Block[4];
 				for(int i = 0; i < 4; i++){
 					subBlocks[i] = new Block(lvl + 1, maxDepth);
 				}
 				this.children = subBlocks;
 				this.color = null;
-			} else {
+			} else { //No kids :(
 				this.color = GameColors.BLOCK_COLORS[gen.nextInt(4)];
 				this.children = new Block[0];
 			}
@@ -326,26 +326,42 @@ public class Block {
 
 	//Unit cell = smallest
 	public Color[][] flatten() {
-		Color[][] returnArray = new Color[this.size][this.size];
-		this.writeArray(returnArray);
+		int unitSize = this.findUnit();
+
+		Color[][] returnArray = new Color[this.size/unitSize][this.size/unitSize];
+		this.writeArray(returnArray,unitSize);
 
 		return returnArray;
 	}
-	private void writeArray(Color[][] array){
+
+	private int findUnit() {
+		int smallestFound = Integer.MAX_VALUE;
+		if(this.children.length == 0){
+			return this.size;
+		} else {
+			for(int i = 0; i < 4; i++) {
+				int foundValue = this.children[i].findUnit();
+				if (foundValue < smallestFound) {
+					smallestFound = foundValue;
+				}
+			}
+		}
+		return smallestFound;
+	}
+
+	private void writeArray(Color[][] array, int unitSize){
 		if (this.children.length == 0){
-			for(int i = 0; i < this.size; i++){
-				for(int j = 0; j < this.size; j++){
-					array[this.yCoord + i][this.xCoord + j] = this.color;
+			for(int i = 0; i < (this.size/unitSize); i++){
+				for(int j = 0; j < (this.size/unitSize); j++){
+					array[this.yCoord/unitSize + i][this.xCoord/unitSize + j] = this.color;
 				}
 			}
 		} else {
 			for(Block subBlock : this.children){
-				subBlock.writeArray(array);
+				subBlock.writeArray(array,unitSize);
 			}
 		}
 	}
-
- 
  
 	// These two get methods have been provided. Do NOT modify them. 
 	public int getMaxDepth() {
@@ -410,8 +426,9 @@ public class Block {
 		}
 	}
 	public static void main(String[] args) {
-		Block blockDepth3 = new Block(0,3);
-		blockDepth3.updateSizeAndPosition(16,0,0);
+		Block blockDepth3 = new Block(0,4);
+		blockDepth3.updateSizeAndPosition(32 ,0,0);
+		blockDepth3.printBlock();
 		blockDepth3.printColoredBlock();
 	}
 }
