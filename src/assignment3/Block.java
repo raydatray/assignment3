@@ -11,7 +11,7 @@ public class Block {
 	private int maxDepth; 
 	private Color color;
 	private Block[] children; // {UR, UL, LL, LR}
-	public static Random gen = new Random();
+	public static Random gen = new Random(69); //HAHA! REMOVE this when submitting
  
 	/*
 	 * These two constructors are here for testing purposes. 
@@ -34,6 +34,16 @@ public class Block {
 	 * (i.e. they will all be initialized by default)
 	 */
 	public Block(int lvl, int maxDepth) {
+		//input validation hell
+		//are you forgetting something?
+		if(lvl > maxDepth) {
+			throw new IllegalArgumentException("Initial lvl cannot be higher than maxDepth");
+		} else if (maxDepth <= 0){
+			throw new IllegalArgumentException("maxDepth must be positive integer");
+		} else if (lvl < 0) {
+			throw new IllegalArgumentException("initial lvl must not be smaller than 0");
+		}
+
 		this.level = lvl;
 		this.maxDepth = maxDepth;
 
@@ -41,6 +51,7 @@ public class Block {
 			this.color = GameColors.BLOCK_COLORS[gen.nextInt(4)];
 			this.children = new Block[0];
 		} else {
+			//nextDouble/nextFloat technically make the same shit, use float for less memory
 			if (gen.nextFloat(1) < Math.exp(-.25 * this.level)) { //Attempt to generate more children
 				Block[] subBlocks = new Block[4];
 				for(int i = 0; i < 4; i++){
@@ -54,6 +65,7 @@ public class Block {
 			}
 		}
 	}
+
 	/*
 	  * Updates size and position for the block and all of its sub-blocks, while
 	  * ensuring consistency between the attributes and the relationship of the 
@@ -63,16 +75,19 @@ public class Block {
 	  *  coordinates of the top left corner of the block. 
 	 */
 	public void updateSizeAndPosition (int size, int xCoord, int yCoord) {
-		if (this.level == 0 ) { //this only works if it is the top block
-			int level = 0;
-			int tempSize = size;
-			while (level <= this.maxDepth) {
-				if (tempSize % 2 == 0) {
-					level++;
-					tempSize /= 2;
-				} else {
-					throw new IllegalArgumentException("x");
-				}
+		if (size <= 0) throw new IllegalArgumentException("Size must be a positive integer");
+		if (xCoord < 0) throw new IllegalArgumentException("xCoord is below 0");
+		if (yCoord < 0) throw new IllegalArgumentException("yCoord is below 0");
+
+		//Check if the size given can actually be subdivided all the way down
+		int level = this.level;
+		int tempSize = size;
+		while (level <= this.maxDepth) {
+			if (tempSize % 2 == 0) {
+				level++;
+				tempSize /= 2;
+			} else {
+				throw new IllegalArgumentException("Size provided cannot be subdivided at level:" + level);
 			}
 		}
 
@@ -83,16 +98,16 @@ public class Block {
 		if (this.children.length != 0){
 			for(int i = 0; i < 4; i++) {
 				switch(i) {
-					case 0 -> {
+					case 0 -> { //UR
 						this.children[i].updateSizeAndPosition(size/2, xCoord + size/2, yCoord);
 					}
-					case 1 -> {
+					case 1 -> { //UL
 						this.children[i].updateSizeAndPosition(size/2, xCoord, yCoord);
 					}
-					case 2 -> {
+					case 2 -> { //LL
 						this.children[i].updateSizeAndPosition(size/2, xCoord, yCoord + size/2);
 					}
-					case 3 -> {
+					case 3 -> { //LR
 						this.children[i].updateSizeAndPosition(size/2, xCoord + size/2, yCoord + size/2);
 					}
 				}
@@ -115,13 +130,14 @@ public class Block {
   	*/
 	public ArrayList<BlockToDraw> getBlocksToDraw() {
 		ArrayList<BlockToDraw> board = new ArrayList<BlockToDraw>();
-		if(this.children.length != 0) {
-			for(Block block : this.children){
+
+		if(this.children.length != 0) { //If the block has children, continue to traverse down the tree
+			for(Block block : this.children){ //Get all the children and add to the array list
 				board.addAll(block.getBlocksToDraw());
 			}
 		} else {
-			board.add(new BlockToDraw(this.color, this.xCoord, this.yCoord, this.size, 0));
-			board.add(new BlockToDraw(GameColors.FRAME_COLOR, this.xCoord, this.yCoord, this.size, 3));
+			board.add(new BlockToDraw(this.color, this.xCoord, this.yCoord, this.size, 0)); //The actual block
+			board.add(new BlockToDraw(GameColors.FRAME_COLOR, this.xCoord, this.yCoord, this.size, 3)); //Dividers
 		}
 		return board;
 	}
@@ -324,29 +340,24 @@ public class Block {
 	 * arr[0][0] is the color of the unit cell in the upper left corner of this Block.
 	 */
 
-	//Unit cell = smallest
+	//Unit cell = smallest size allowed by depth
 	public Color[][] flatten() {
 		int unitSize = this.findUnit();
-
 		Color[][] returnArray = new Color[this.size/unitSize][this.size/unitSize];
+
 		this.writeArray(returnArray,unitSize);
 
 		return returnArray;
 	}
 
 	private int findUnit() {
-		int smallestFound = Integer.MAX_VALUE;
-		if(this.children.length == 0){
-			return this.size;
-		} else {
-			for(int i = 0; i < 4; i++) {
-				int foundValue = this.children[i].findUnit();
-				if (foundValue < smallestFound) {
-					smallestFound = foundValue;
-				}
-			}
+		int unit = this.size;
+		int divider = this.maxDepth - this.level;
+		while(divider > 0){
+			unit /= 2;
+			divider--;
 		}
-		return smallestFound;
+		return unit;
 	}
 
 	private void writeArray(Color[][] array, int unitSize){
@@ -426,8 +437,8 @@ public class Block {
 		}
 	}
 	public static void main(String[] args) {
-		Block blockDepth3 = new Block(0,4);
-		blockDepth3.updateSizeAndPosition(32 ,0,0);
+		Block blockDepth3 = new Block(0,3);
+		blockDepth3.updateSizeAndPosition(16 ,0,0);
 		blockDepth3.printBlock();
 		blockDepth3.printColoredBlock();
 	}
