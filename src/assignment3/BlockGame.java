@@ -267,8 +267,8 @@ public class BlockGame extends JPanel implements Runnable, MouseListener, MouseM
     
     private int initGame(int maxDepth) {
     	this.board = new Block(0, maxDepth);
-    	int minSize = this.dim / (int)Math.pow(2, maxDepth);
-		int size = (int)Math.pow(2, maxDepth) * minSize;
+    	int minSize = this.dim / (int)Math.pow(2, maxDepth); //800 DIM
+		int size = (int)Math.pow(2, maxDepth) * minSize; //512
     	this.board.updateSizeAndPosition(size, 0, 0);
     	this.blocks = this.board.getBlocksToDraw();
 		return size;

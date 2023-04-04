@@ -39,11 +39,12 @@ public class BlobGoal extends Goal{
 		if (unitCells[i][j] != this.targetGoal) { //Cell does not contain color we want
 			visited[i][j] = true;
 			return 0;
-		} else if (visited[i][j]) {
+		} else if (visited[i][j]) { //Cell already visited
 			return 0;
-		} else {
-			int upperBound = unitCells.length;
-			int size = 0;
+		} else { //Cell not visited
+			int upperBound = unitCells.length - 1;
+			int size = 1;
+			visited[i][j] = true;
 
 			if(boundsCheck(i-1, j, upperBound)) { // up
 				size += undiscoveredBlobSize(i-1, j, unitCells, visited);
@@ -57,12 +58,20 @@ public class BlobGoal extends Goal{
 			if(boundsCheck(i, j-1, upperBound)) { //left
 				size += undiscoveredBlobSize(i, j-1, unitCells, visited);
 			}
-			visited[i][j] = true;
 			return size;
 		}
 	}
 
 	private static boolean boundsCheck(int i, int j, int bounds) {
 		return (0 <= i) && (i <= bounds) && (0 <= j) && (j <= bounds);
+	}
+	public static void main(String[] args) {
+		Block b = new Block(0,6);
+		b.updateSizeAndPosition(128, 0,0);
+		b.printBlock();
+		b.printColoredBlock();
+
+		BlobGoal g1 = new BlobGoal(GameColors.BLUE);
+		System.out.println(g1.score(b));
 	}
 }

@@ -11,7 +11,7 @@ public class Block {
 	private int maxDepth; 
 	private Color color;
 	private Block[] children; // {UR, UL, LL, LR}
-	public static Random gen = new Random(69); //HAHA! REMOVE this when submitting
+	public static Random gen = new Random(); //HAHA! REMOVE this when submitting
  
 	/*
 	 * These two constructors are here for testing purposes. 
@@ -79,10 +79,11 @@ public class Block {
 		if (xCoord < 0) throw new IllegalArgumentException("xCoord is below 0");
 		if (yCoord < 0) throw new IllegalArgumentException("yCoord is below 0");
 
-		//Check if the size given can actually be subdivided all the way down
+		//Check if the size given can actually be subdivided all the way down (evenly)
+		//Your last value can be 1?
 		int level = this.level;
 		int tempSize = size;
-		while (level <= this.maxDepth) {
+		while (level <= (this.maxDepth - 1)) {
 			if (tempSize % 2 == 0) {
 				level++;
 				tempSize /= 2;
@@ -323,9 +324,9 @@ public class Block {
 			Block[] newSubBlocks = new Block[4];
 			for(int i = 0; i < 4; i++){
 				newSubBlocks[i] = new Block(this.level + 1, this.maxDepth);
-				newSubBlocks[i].updateSizeAndPosition(this.size, this.xCoord, this.yCoord);
 			}
 			this.children = newSubBlocks;
+			this.updateSizeAndPosition(this.size, this.xCoord, this.yCoord);
 			return true;
 		}
 	}
@@ -437,8 +438,8 @@ public class Block {
 		}
 	}
 	public static void main(String[] args) {
-		Block blockDepth3 = new Block(0,3);
-		blockDepth3.updateSizeAndPosition(16 ,0,0);
+		Block blockDepth3 = new Block(0,6);
+		blockDepth3.updateSizeAndPosition(128 ,0,0);
 		blockDepth3.printBlock();
 		blockDepth3.printColoredBlock();
 	}
